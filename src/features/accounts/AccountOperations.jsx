@@ -3,24 +3,26 @@ import { useDispatch, useSelector } from "react-redux";
 import { deposit, withdraw, requestLoan, payLoan } from "./accountSlice";
 
 function AccountOperations() {
-  const dispatch = useDispatch();
-  const {
-    loan: currentLoan,
-    loanPurpose: currentLoanPurpose,
-    balance,
-  } = useSelector((store) => store.account);
-
   const [depositAmount, setDepositAmount] = useState("");
   const [withdrawalAmount, setWithdrawalAmount] = useState("");
   const [loanAmount, setLoanAmount] = useState("");
   const [loanPurpose, setLoanPurpose] = useState("");
   const [currency, setCurrency] = useState("USD");
 
+  const dispatch = useDispatch();
+  const {
+    loan: currentLoan,
+    loanPurpose: currentLoanPurpose,
+    balance,
+    isLoading,
+  } = useSelector((store) => store.account);
+
   function handleDeposit() {
     if (!depositAmount) return;
 
-    dispatch(deposit(depositAmount));
+    dispatch(deposit(depositAmount, currency));
     setDepositAmount("");
+    setCurrency("");
   }
 
   function handleWithdrawal() {
@@ -64,7 +66,9 @@ function AccountOperations() {
             <option value="BDT">Bangladeshi Taka</option>
           </select>
 
-          <button onClick={handleDeposit}>Deposit {depositAmount}</button>
+          <button onClick={handleDeposit} disabled={isLoading}>
+            {isLoading ? "converting..." : `Deposit ${depositAmount}`}
+          </button>
         </div>
 
         <div>

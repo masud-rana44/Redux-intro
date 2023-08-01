@@ -18,5 +18,6 @@ function mapStateToProps(store) {
   };
 }
 
+// Old way to access state from the redux-store
 // eslint-disable-next-line react-refresh/only-export-components
 export default connect(mapStateToProps)(BalanceDisplay);
