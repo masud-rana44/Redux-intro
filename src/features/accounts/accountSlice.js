@@ -1,55 +1,63 @@
-const initialStateAccount = {
+import { createSlice } from "@reduxjs/toolkit";
+
+const initialState = {
   balance: 0,
   loan: 0,
   loanPurpose: "",
   isLoading: false,
 };
 
-export default function reducerAccount(state = initialStateAccount, action) {
-  switch (action.type) {
-    case "account/deposit":
-      return {
-        ...state,
-        balance: state.balance + action.payload,
-        isLoading: false,
-      };
-    case "account/withdraw":
-      return { ...state, balance: state.balance - action.payload };
-    case "account/requestLoan":
-      if (state.loan > 0) return state;
+const accountSlice = createSlice({
+  name: "account",
+  initialState,
+  reducers: {
+    deposit(state, action) {
+      state.balance += action.payload;
+      state.isLoading = false;
+    },
+    withdraw(state, action) {
+      state.balance -= action.payload;
+    },
+    requestLoan: {
+      // opinionated way(new) of receiving multiple arguments
+      prepare(amount, purpose) {
+        return {
+          payload: {
+            amount,
+            purpose,
+          },
+        };
+      },
 
-      return {
-        ...state,
-        balance: state.balance + action.payload.amount,
-        loan: action.payload.amount,
-        loanPurpose: action.payload.purpose,
-      };
-    case "account/payLoan":
-      if (state.balance < state.loan) return state;
+      reducer(state, action) {
+        if (state.loan > 0) return;
 
-      return {
-        ...state,
-        balance: state.balance - state.loan,
-        loan: 0,
-        loanPurpose: "",
-      };
-    case "account/convertingCurrency":
-      return {
-        ...state,
-        isLoading: true,
-      };
-    default:
-      return state;
-  }
-}
+        state.balance += action.payload.amount;
+        state.loan = action.payload.amount;
+        state.loanPurpose = action.payload.purpose;
+      },
+    },
+    payLoan(state) {
+      if (state.balance < state.loan) return;
 
-// Action creator export functions
+      state.balance -= state.loan;
+      state.loan = 0;
+      state.loanPurpose = "";
+    },
+    convertingCurrency(state) {
+      state.isLoading = true;
+    },
+  },
+});
+
+export const { withdraw, payLoan, requestLoan } = accountSlice.actions;
+
+// NOT, redux toolkit way
 export function deposit(amount, currency) {
   // If currency USD, no need to convert anymore
   if (currency === "USD") return { type: "account/deposit", payload: amount };
 
-  // Otherwise need asynchronous operation, by using THUNK middleware
-  return async function (dispatch, getState) {
+  return async function (dispatch) {
     // API call
     dispatch({ type: "account/convertingCurrency" });
 
@@ -65,20 +73,4 @@ export function deposit(amount, currency) {
   };
 }
 
-export function withdraw(amount) {
-  return { type: "account/withdraw", payload: amount };
-}
-
-export function requestLoan(amount, purpose) {
-  return {
-    type: "account/requestLoan",
-    payload: {
-      amount,
-      purpose,
-    },
-  };
-}
-
-export function payLoan() {
-  return { type: "account/payLoan" };
-}
+export default accountSlice.reducer;
